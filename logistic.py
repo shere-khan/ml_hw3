@@ -3,6 +3,7 @@ import plotly.graph_objs as go
 import numpy as np
 from sklearn import linear_model, datasets
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 
 def process_log_reg_x_data():
@@ -20,9 +21,9 @@ def process_log_reg_y_data():
     y = []
     with open("q1y.dat") as f:
         for line in f:
-            y.append(str(int(float(line))))
+            y.append((int(float(line))))
 
-    return y
+    return np.array(y)
 
 def one_dim_log_reg_ex():
     n_samples = 100
@@ -80,13 +81,6 @@ def one_dim_log_reg_ex():
                                   zeroline=False))
 
     fig = go.Figure(data=[p1, p2, p3, p4], layout=layout)
-    # fig = go.Figure(data=[p1], layout=layout)
-    # fig = go.Figure(data=[p2], layout=layout)
-    # fig = go.Figure(data=[p3], layout=layout)
-    # fig = go.Figure(data=[p4], layout=layout)
-    # fig = go.Figure(data=[p1, p2, p3, p4], layout=layout)
-
-    py.plotly.plot(fig)
 
 def iriset():
     iris = datasets.load_iris()
@@ -124,32 +118,42 @@ def iriset():
 
     plt.show()
 
-def problem1(data, labels):
-    X = data[0]
+def problem1(X, labels):
     logreg = linear_model.LogisticRegression(C=1e5)
     logreg.fit(X, labels)
 
     x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
     y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
 
+    h = .02
     xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
     Z = logreg.predict(np.c_[xx.ravel(), yy.ravel()])
 
-    p1 = go.Scatter(x=X[:,0], y=X[:,1],
-                    mode='markers',
-                    marker=dict(color='black'),
-                    text=labels,
-                    showlegend=False
-                    )
+    Z = Z.reshape(xx.shape)
+    fig = plt.figure(1, figsize=(4, 3))
+    plt.pcolormesh(xx, yy, Z, cmap=plt.cm.Paired)
 
+    plt.scatter(X[:, 0], X[:, 1], c=labels, edgecolors='k', cmap=plt.cm.Paired)
+    plt.xlabel('Sepal length')
+    plt.ylabel('Sepal width')
+
+    plt.xlim(xx.min(), xx.max())
+    plt.ylim(yy.min(), yy.max())
+    plt.xticks(())
+    plt.yticks(())
+
+    with PdfPages('LR.pdf') as pdf:
+        pdf.savefig(fig)
+    # plt.savefig('LR.png')
+    plt.show()
 
 if __name__ == '__main__':
     py.tools.set_credentials_file(username='jbarry', api_key='NxzNmvLGLfOXz9xjF2HI')
 
-    # X = process_log_reg_x_data()
-    # y = process_log_reg_y_data()
+    X = process_log_reg_x_data()
+    y = process_log_reg_y_data()
     # one_dim_log_reg_ex()
 
-    # problem1(X, y)
+    problem1(X, y)
 
-    iriset()
+    # iriset()
