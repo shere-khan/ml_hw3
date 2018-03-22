@@ -82,69 +82,53 @@ def one_dim_log_reg_ex():
 
     fig = go.Figure(data=[p1, p2, p3, p4], layout=layout)
 
-def iriset():
-    iris = datasets.load_iris()
-    X = iris.data[:, :2]  # we only take the first two features.
-    Y = iris.target
-
-    h = .02  # step size in the mesh
-
-    logreg = linear_model.LogisticRegression(C=1e5)
-
-    # we create an instance of Neighbours Classifier and fit the data.
-    logreg.fit(X, Y)
-
-    # Plot the decision boundary. For that, we will assign a color to each
-    # point in the mesh [x_min, x_max]x[y_min, y_max].
-    x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
-    y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
-    Z = logreg.predict(np.c_[xx.ravel(), yy.ravel()])
-
-    # Put the result into a color plot
-    Z = Z.reshape(xx.shape)
-    plt.figure(1, figsize=(4, 3))
-    plt.pcolormesh(xx, yy, Z, cmap=plt.cm.Paired)
-
-    # Plot also the training points
-    plt.scatter(X[:, 0], X[:, 1], c=Y, edgecolors='k', cmap=plt.cm.Paired)
-    plt.xlabel('Sepal length')
-    plt.ylabel('Sepal width')
-
-    plt.xlim(xx.min(), xx.max())
-    plt.ylim(yy.min(), yy.max())
-    plt.xticks(())
-    plt.yticks(())
-
-    plt.show()
-
 def problem1(X, labels):
+    # Fit classifier
     logreg = linear_model.LogisticRegression(C=1e5)
     logreg.fit(X, labels)
 
+    # Fit LR
+    lr = linear_model.LinearRegression()
+    lr_x = X[:,0][:, np.newaxis]
+    lr_y = X[:,1][:, np.newaxis]
+    lr.fit(lr_x, lr_y)
+
     x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
     y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
 
+    # Configure plot
     h = .02
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
-    Z = logreg.predict(np.c_[xx.ravel(), yy.ravel()])
+    ar1 = np.arange(x_min, x_max, h)
+    ar2 = np.arange(y_min, y_max, h)
+    xx, yy = np.meshgrid(ar1, ar2)
+    d = np.c_[xx.ravel(), yy.ravel()]
+    Z = logreg.predict(d)
 
     Z = Z.reshape(xx.shape)
     fig = plt.figure(1, figsize=(4, 3))
     plt.pcolormesh(xx, yy, Z, cmap=plt.cm.Paired)
 
+    # Plot log reg classification
     plt.scatter(X[:, 0], X[:, 1], c=labels, edgecolors='k', cmap=plt.cm.Paired)
-    plt.xlabel('Sepal length')
-    plt.ylabel('Sepal width')
+
+    # Plot LR
+    t = ar1.reshape((ar1.size, 1))
+    lrpredict = lr.predict(np.sort(t))
+    plt.plot(t, lrpredict, color='black', linewidth=0.5)
+
+    plt.xlabel('')
+    plt.ylabel('')
 
     plt.xlim(xx.min(), xx.max())
     plt.ylim(yy.min(), yy.max())
     plt.xticks(())
     plt.yticks(())
+    fig.set_size_inches(18.5, 10.5)
 
-    with PdfPages('LR.pdf') as pdf:
-        pdf.savefig(fig)
-    # plt.savefig('LR.png')
+    if input('save pdf (y/n)?') == 'y':
+        with PdfPages('LR.pdf') as pdf:
+            pdf.savefig(fig)
+
     plt.show()
 
 if __name__ == '__main__':
