@@ -34,6 +34,7 @@ def one_dim_log_reg_ex():
     X += .3 * np.random.normal(size=n_samples)
 
     X = X[:, np.newaxis]
+
     # run the classifier
     clf = linear_model.LogisticRegression(C=1e5)
     clf.fit(X, y)
