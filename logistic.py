@@ -1,5 +1,3 @@
-import plotly as py
-import plotly.graph_objs as go
 import numpy as np
 from sklearn import linear_model, datasets
 import matplotlib.pyplot as plt
@@ -25,76 +23,15 @@ def process_log_reg_y_data():
 
     return np.array(y)
 
-def one_dim_log_reg_ex():
-    n_samples = 100
-    np.random.seed(0)
-    X = np.random.normal(size=n_samples)
-    y = (X > 0).astype(np.float)
-    X[X > 0] *= 4
+def process_lin_reg_data(fn):
+    data = []
+    with open(fn) as f:
+        for line in f:
+            data.append(float(line))
 
-    X += .3 * np.random.normal(size=n_samples)
+    return np.array(data)
 
-    X = X[:, np.newaxis]
-
-    # run the classifier
-    clf = linear_model.LogisticRegression(C=1e5)
-    clf.fit(X, y)
-
-    # Plot of 1s and 0s
-    p1 = go.Scatter(x=X, y=y,
-                    mode='markers',
-                    marker=dict(color='black'),
-                    showlegend=False
-                    )
-    X_test = np.linspace(-5, 10, 300)
-
-    def model(x):
-        return 1 / (1 + np.exp(-x))
-
-    loss = model(X_test * clf.coef_ + clf.intercept_).ravel()
-
-    # Plot of sigmoid
-    p2 = go.Scatter(x=X_test, y=loss,
-                    mode='lines',
-                    line=dict(color='red', width=3),
-                    name='Logistic Regression Model')
-
-    ols = linear_model.LinearRegression()
-
-    ols.fit(X, y)
-    cof = ols.coef_
-    inter = ols.intercept_
-    # Straight line
-    p3 = go.Scatter(x=X_test, y=ols.coef_ * X_test + ols.intercept_,
-                    mode='lines',
-                    line=dict(color='blue', width=1),
-                    name='Linear Regression Model'
-                    )
-    # halfway line
-    p4 = go.Scatter(x=[-4, 10], y=2 * [.5],
-                    mode='lines',
-                    line=dict(color='gray', width=1),
-                    showlegend=False
-                    )
-
-    layout = go.Layout(xaxis=dict(title='x', range=[-4, 10],
-                                  zeroline=False),
-                       yaxis=dict(title='y', range=[-0.25, 1.25],
-                                  zeroline=False))
-
-    fig = go.Figure(data=[p1, p2, p3, p4], layout=layout)
-
-def problem1(X, labels):
-    # Fit classifier
-    logreg = linear_model.LogisticRegression(C=1e5)
-    logreg.fit(X, labels)
-
-    # Fit LR
-    lr = linear_model.LinearRegression()
-    lr_x = X[:,0][:, np.newaxis]
-    lr_y = X[:,1][:, np.newaxis]
-    lr.fit(lr_x, lr_y)
-
+def problem1a(X, labels):
     x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
     y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
 
@@ -104,6 +41,11 @@ def problem1(X, labels):
     ar2 = np.arange(y_min, y_max, h)
     xx, yy = np.meshgrid(ar1, ar2)
     d = np.c_[xx.ravel(), yy.ravel()]
+
+    # Logistic regression boundary line
+    logreg = linear_model.LogisticRegression(C=1e5)
+    logreg.fit(X, labels)
+
     Z = logreg.predict(d)
 
     Z = Z.reshape(xx.shape)
@@ -112,11 +54,6 @@ def problem1(X, labels):
 
     # Plot log reg classification
     plt.scatter(X[:, 0], X[:, 1], c=labels, edgecolors='k', cmap=plt.cm.Paired)
-
-    # Plot LR
-    t = ar1.reshape((ar1.size, 1))
-    lrpredict = lr.predict(np.sort(t))
-    plt.plot(t, lrpredict, color='black', linewidth=0.5)
 
     plt.xlabel('')
     plt.ylabel('')
@@ -128,18 +65,49 @@ def problem1(X, labels):
     fig.set_size_inches(18.5, 10.5)
 
     if input('save pdf (y/n)?') == 'y':
-        with PdfPages('LR.pdf') as pdf:
+        with PdfPages('logreg.pdf') as pdf:
+            pdf.savefig(fig)
+
+    plt.show()
+
+def problem1b(X, y):
+    # Configure plot
+    x_min, x_max = X.min() - .5, X.max() + .5
+
+    # Use only one feature
+    X = X.reshape(-1, 1)
+
+    h = .02
+    ar1 = np.arange(x_min, x_max, h)
+
+    # Fit LR
+    lr = linear_model.LinearRegression()
+    lr.fit(X, y)
+
+    p = lr.predict(X)
+    plt.plot(X, p, color='black', linewidth=0.5)
+
+    fig = plt.figure(1, figsize=(18.5, 10.5))
+
+    # Plot log reg classification
+    plt.scatter(X, y, color='blue')
+    plt.plot(X, p, color='black', linewidth=0.4)
+
+    plt.xlabel('')
+    plt.ylabel('')
+
+    # Save PDF
+    if input('save pdf (y/n)?') == 'y':
+        with PdfPages('linreg.pdf') as pdf:
             pdf.savefig(fig)
 
     plt.show()
 
 if __name__ == '__main__':
-    py.tools.set_credentials_file(username='jbarry', api_key='NxzNmvLGLfOXz9xjF2HI')
+    # X1 = process_log_reg_x_data()
+    # y1 = process_log_reg_y_data()
+    # problem1a(X1, y1)
 
-    X = process_log_reg_x_data()
-    y = process_log_reg_y_data()
-    # one_dim_log_reg_ex()
-
-    problem1(X, y)
-
-    # iriset()
+    X2 = process_lin_reg_data("q2x.dat")
+    y2 = process_lin_reg_data("q2y.dat")
+    problem1b(X2, y2)
