@@ -133,7 +133,7 @@ def estimate_poly_fit(X, y):
 
     # Save PDF
     if input('save pdf (y/n)?') == 'y':
-        with PdfPages('linreg.pdf') as pdf:
+        with PdfPages('polyfit.pdf') as pdf:
             pdf.savefig(fig)
 
     plt.legend(loc='lower left')
@@ -141,13 +141,12 @@ def estimate_poly_fit(X, y):
     plt.show()
 
 if __name__ == '__main__':
-    # X1 = process_log_reg_x_data()
-    # y1 = process_log_reg_y_data()
-    # problem1a(X1, y1)
+    X1 = process_log_reg_x_data()
+    y1 = process_log_reg_y_data()
+    problem1a(X1, y1)
 
     X2 = process_lin_reg_data("q2x.dat")
     y2 = process_lin_reg_data("q2y.dat")
-    # problem1b(X2, y2)
+    problem1b(X2, y2)
     estimate_poly_fit(X2, y2)
 
-    # ex()
