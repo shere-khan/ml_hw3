@@ -1,8 +1,11 @@
 import numpy as np
-from sklearn import linear_model, datasets
-import matplotlib.pyplot as plt
+from sklearn import linear_model
 from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.pyplot as plt
 
+from sklearn.linear_model import Ridge
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.pipeline import make_pipeline
 
 def process_log_reg_x_data():
     x = []
@@ -49,7 +52,6 @@ def problem1a(X, labels):
     Z = logreg.predict(d)
 
     Z = Z.reshape(xx.shape)
-    fig = plt.figure(1, figsize=(4, 3))
     plt.pcolormesh(xx, yy, Z, cmap=plt.cm.Paired)
 
     # Plot log reg classification
@@ -62,10 +64,11 @@ def problem1a(X, labels):
     plt.ylim(yy.min(), yy.max())
     plt.xticks(())
     plt.yticks(())
-    fig.set_size_inches(18.5, 10.5)
 
     if input('save pdf (y/n)?') == 'y':
         with PdfPages('logreg.pdf') as pdf:
+            fig = plt.figure(1, figsize=(18.5, 10.5))
+            # fig.set_size_inches(18.5, 10.5)
             pdf.savefig(fig)
 
     plt.show()
@@ -87,8 +90,6 @@ def problem1b(X, y):
     p = lr.predict(X)
     plt.plot(X, p, color='black', linewidth=0.5)
 
-    fig = plt.figure(1, figsize=(18.5, 10.5))
-
     # Plot log reg classification
     plt.scatter(X, y, color='blue')
     plt.plot(X, p, color='black', linewidth=0.4)
@@ -99,7 +100,43 @@ def problem1b(X, y):
     # Save PDF
     if input('save pdf (y/n)?') == 'y':
         with PdfPages('linreg.pdf') as pdf:
+            fig = plt.figure(1, figsize=(18.5, 10.5))
             pdf.savefig(fig)
+
+
+    plt.show()
+
+def estimate_poly_fit(X, y):
+    # Configure plot
+    x_min, x_max = X.min() - .5, X.max() + .5
+
+    # Use only one feature
+    X = X.reshape(-1, 1)
+
+    x_plot = np.linspace(x_min, x_max, 100)
+    fig = plt.figure(1, figsize=(18.5, 10.5))
+
+    # Plot all fit estimations
+    colors = ['teal', 'red', 'gold']
+    for count, degree in enumerate([3, 4, 5]):
+        model = make_pipeline(PolynomialFeatures(degree), Ridge())
+        model.fit(X, y)
+        y_plot = model.predict(x_plot[:, np.newaxis])
+        plt.plot(x_plot, y_plot, color=colors[count], linewidth=1,
+                 label="degree %d" % degree)
+
+    # Plot log reg classification
+    plt.scatter(X, y, color='blue')
+
+    plt.xlabel('')
+    plt.ylabel('')
+
+    # Save PDF
+    if input('save pdf (y/n)?') == 'y':
+        with PdfPages('linreg.pdf') as pdf:
+            pdf.savefig(fig)
+
+    plt.legend(loc='lower left')
 
     plt.show()
 
@@ -110,4 +147,7 @@ if __name__ == '__main__':
 
     X2 = process_lin_reg_data("q2x.dat")
     y2 = process_lin_reg_data("q2y.dat")
-    problem1b(X2, y2)
+    # problem1b(X2, y2)
+    estimate_poly_fit(X2, y2)
+
+    # ex()
