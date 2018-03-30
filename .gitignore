@@ -1,3 +1,5 @@
 .idea/*
 *.pickle
 .dat
+*.pdf
+yeast.data
