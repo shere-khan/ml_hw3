@@ -6,7 +6,9 @@ from sklearn.svm import SVC
 from sklearn.model_selection import cross_val_score, GridSearchCV, StratifiedKFold
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import PolynomialFeatures
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import make_pipeline
+from sklearn.metrics import accuracy_score
 
 def process_log_reg_x_data():
     x = []
@@ -165,7 +167,7 @@ def svm(X, y):
         f.write("\n")
         # print()
 
-def getdata():
+def get_yeast_data():
     fn = 'yeast.data'
     with open(fn) as f:
         X = []
@@ -215,6 +217,42 @@ def set_to_dict(S):
 
     return D
 
+def plot_yeast_data(X, y):
+    x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
+    y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
+
+    # Configure plot
+    h = .02
+    ar1 = np.arange(x_min, x_max, h)
+    ar2 = np.arange(y_min, y_max, h)
+    xx, yy = np.meshgrid(ar1, ar2)
+    d = np.c_[xx.ravel(), yy.ravel()]
+
+    # Plot log reg classification
+    plt.scatter(X[:, 0], X[:, 1], c=y, edgecolors='k', cmap=plt.cm.Paired)
+
+    plt.xlabel('')
+    plt.ylabel('')
+
+    plt.xlim(xx.min(), xx.max())
+    plt.ylim(yy.min(), yy.max())
+    plt.xticks(())
+    plt.yticks(())
+
+    if input('save pdf (y/n)?') == 'y':
+        with PdfPages('yeast_plot.pdf') as pdf:
+            fig = plt.figure(1, figsize=(18.5, 10.5))
+            # fig.set_size_inches(18.5, 10.5)
+            pdf.savefig(fig)
+
+    plt.show()
+
+def ran_forest_yeast_data(X, y):
+    rf = RandomForestClassifier(100)
+    rf.fit(X, y)
+    S = cross_val_score(rf, np.array(X), np.array(y), cv=5)
+    print("CV mean score: {0}".format(S.mean()))
+
 if __name__ == '__main__':
     # X1 = process_log_reg_x_data()
     # y1 = process_log_reg_y_data()
@@ -225,15 +263,19 @@ if __name__ == '__main__':
     # problem1b(X2, y2)
     # estimate_poly_fit(X2, y2)
 
-    (x1, X), y = getdata()
+    (x1, X), y = get_yeast_data()
     print()
     mins, maxs = find_min_max(X)
     X = normalize(X, mins, maxs)
     D = set_to_dict(set(y))
     y = list(map(lambda val: D[val], y))
 
-    p = 0.8
-    sx = m.ceil(len(X) * p)
-    sy = m.ceil(len(y) * p)
-    print("svm")
-    svm(np.array(X), np.array(y))
+    # p = 0.8
+    # sx = m.ceil(len(X) * p)
+    # sy = m.ceil(len(y) * p)
+    # print("svm")
+    # svm(np.array(X), np.array(y))
+
+    # plot_yeast_data(np.array(X), np.array(y))
+    ran_forest_yeast_data(np.array(X), np.array(y))
+
