@@ -1,4 +1,4 @@
-import numpy as np, math as m
+import numpy as np, math as m, pickle
 from sklearn import linear_model
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
@@ -8,7 +8,7 @@ from sklearn.linear_model import Ridge
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import make_pipeline
-from sklearn.metrics import accuracy_score
+
 
 def process_log_reg_x_data():
     x = []
@@ -106,7 +106,6 @@ def problem1b(X, y):
             fig = plt.figure(1, figsize=(18.5, 10.5))
             pdf.savefig(fig)
 
-
     plt.show()
 
 def estimate_poly_fit(X, y):
@@ -143,30 +142,6 @@ def estimate_poly_fit(X, y):
 
     plt.show()
 
-def svm(X, y):
-    # print("C_range..")
-    # C_range = 10. ** np.arange(-3, 8)
-    # print("gamma_range..")
-    # gamma_range = 10. ** np.arange(-5, 4)
-    # print("dict..")
-    # param_grid = dict(gamma=gamma_range, C=C_range)
-    # print("Grid search..")
-    # grid = GridSearchCV(SVC(), param_grid=param_grid, cv=StratifiedKFold(n_splits=5))
-    # print("Fit..")
-    # grid.fit(X, y)
-    # print("The best classifier is: ", grid.best_estimator_)
-    with open("sklearn_svc_results_k5_nosplit_acc2.txt", "w") as f:
-        # for d in range(1, 5):
-            # for c in range(100, 200):
-        clf = SVC(C=1, gamma=1.00, kernel='poly', degree=3)
-        S = cross_val_score(clf, np.array(X), np.array(y), cv=4)
-        # f.write("d: {0}  c: {1:>2}  error: {2:.4f}\n".format(d, c, S.mean()))
-        # print("d: {0}  c: {1:>2}  error: {2:.4f}".format(d, c, S.mean()))
-        f.write("d: {0}  c: {1:>2}  error: {2:.4f}\n".format(1, 1, S.mean()))
-        print("d: {0}  c: {1:>2}  error: {2:.4f}".format(1, 1, S.mean()))
-        f.write("\n")
-        # print()
-
 def get_yeast_data():
     fn = 'yeast.data'
     with open(fn) as f:
@@ -174,13 +149,16 @@ def get_yeast_data():
         y = []
         x1 = []
         for line in f:
+            # Data
             d = line.split()
             x1.append(d.pop(0))
-            y.append(d.pop(-1))
+
+            # Label
+            l = d.pop(-1)
+            label = 1 if l == "CYT" else 0
+            y.append(label)
+
             x = list(map(float, d))
-            for d in x:
-                if d < 0:
-                    print('test1')
             X.append(x)
 
     return (x1, X), y
@@ -212,7 +190,6 @@ def min_max_scaling(d, minn, r):
 def set_to_dict(S):
     D = {}
     for i, s in enumerate(S):
-
         D[s] = i + 1
 
     return D
@@ -253,6 +230,94 @@ def ran_forest_yeast_data(X, y):
     S = cross_val_score(rf, np.array(X), np.array(y), cv=5)
     print("CV mean score: {0}".format(S.mean()))
 
+def svm_optimal_cv(X, y):
+    print("C_range..")
+    C_range = 10. ** np.arange(-3, 8)
+    print("gamma_range..")
+    gamma_range = 10. ** np.arange(-5, 4)
+    print("dict..")
+    param_grid = dict(gamma=gamma_range, C=C_range)
+    print("Grid search..")
+    grid = GridSearchCV(SVC(), param_grid=param_grid, cv=StratifiedKFold(n_splits=5))
+    print("Fit..")
+    grid.fit(X, y)
+    print("The best classifier is: ", grid.best_estimator_)
+    with open("sklearn_svc_optimal.txt", "w") as f:
+        clf = SVC(C=1, gamma=1.00, kernel='poly', degree=3)
+        S = cross_val_score(clf, np.array(X), np.array(y), cv=4)
+        f.write("d: {0}  c: {1:>2}  error: {2:.4f}\n".format(1, 1, S.mean()))
+        print("d: {0}  c: {1:>2}  error: {2:.4f}".format(1, 1, S.mean()))
+        f.write("\n")
+
+def svm(X, y):
+    with open("sklearn_svc_results_k5_nosplit_acc2.txt", "w") as f:
+        allerrors = {}
+        for d in range(1, 5):
+            errors = {}
+            for c in range(1, 100, 10):
+                clf = SVC(C=c, gamma=1, kernel='poly', degree=d)
+                S = cross_val_score(clf, np.array(X), np.array(y), cv=4)
+                acc = S.mean()
+                errors[c] = [1 - acc, acc.std]
+                f.write("d: {0}  c: {1:>2}  error: {2:.4f}\n".format(d, c, acc))
+                print("d: {0}  c: {1:>2}  error: {2:.4f}".format(d, c, S.mean()))
+            f.write("\n")
+            allerrors[d] = errors
+            print()
+
+    pickle.dump(allerrors, open("allerrors1.p", "wb"))
+
+def findmean(data):
+    # Loop over error values for C
+    # and calculate mean
+    sum = 0
+    for d in data:
+        sum += d
+
+    return sum / len(data)
+
+def stdev(data, mean):
+    sum = 0
+    for d in data:
+        sum += m.pow(d - mean, 2)
+
+    return m.sqrt(sum / len(data))
+
+def plot_libsvm_accs():
+    accs = pickle.load(open("/home/justin/Documents/libsvm-3.22/python/tot_accs1.p",
+                            "rb"))
+    for deg, val1 in accs.items():
+        means = []
+        stdevs_p = []
+        stdevs_m = []
+        c_vals = list(val1.keys())
+
+        # Loop over all error values for a values of C
+        for data in val1.values():
+            mean = findmean(data)
+            means.append(mean)
+            st = stdev(data, mean)
+            stdevs_p.append(mean + st)
+            stdevs_m.append(mean - st)
+
+        plotlibsvm(np.array(c_vals), np.array(means), np.array(stdevs_p),
+                   np.array(stdevs_m))
+
+def plotlibsvm(c_vals, means, stdevs_p, stdevs_m):
+    plt.scatter(c_vals, means, edgecolors='k', cmap=plt.cm.Paired)
+    plt.scatter(c_vals, stdevs_p, edgecolors='k', cmap=plt.cm.Paired)
+    plt.scatter(c_vals, stdevs_m, edgecolors='k', cmap=plt.cm.Paired)
+
+    plt.xlabel('C')
+    plt.ylabel('Error +/- Std')
+
+    if input('save pdf (y/n)?') == 'y':
+        with PdfPages('yeast_plot.pdf') as pdf:
+            fig = plt.figure(1, figsize=(18.5, 10.5))
+            pdf.savefig(fig)
+
+    plt.show()
+
 if __name__ == '__main__':
     # X1 = process_log_reg_x_data()
     # y1 = process_log_reg_y_data()
@@ -263,19 +328,18 @@ if __name__ == '__main__':
     # problem1b(X2, y2)
     # estimate_poly_fit(X2, y2)
 
-    (x1, X), y = get_yeast_data()
-    print()
-    mins, maxs = find_min_max(X)
-    X = normalize(X, mins, maxs)
-    D = set_to_dict(set(y))
-    y = list(map(lambda val: D[val], y))
+    # (x1, X), y = get_yeast_data()
+    # mins, maxs = find_min_max(X)
+    # X = normalize(X, mins, maxs)
 
-    # p = 0.8
-    # sx = m.ceil(len(X) * p)
-    # sy = m.ceil(len(y) * p)
+    # D = set_to_dict(set(y))
+    # y = list(map(lambda val: D[val], y))
+
     # print("svm")
     # svm(np.array(X), np.array(y))
 
-    # plot_yeast_data(np.array(X), np.array(y))
-    ran_forest_yeast_data(np.array(X), np.array(y))
+    # plot_svm_error()
 
+    # plot_yeast_data(np.array(X), np.array(y))
+    # ran_forest_yeast_data(np.array(X), np.array(y))
+    plot_libsvm_accs()
