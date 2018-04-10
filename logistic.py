@@ -284,7 +284,7 @@ def stdev(data, mean):
     return m.sqrt(sum / len(data))
 
 def plot_libsvm_accs():
-    accs = pickle.load(open("/home/justin/Documents/libsvm-3.22/python/tot_accs1.p",
+    accs = pickle.load(open("/home/justin/Documents/libsvm-3.22/python/tot_accs2.p",
                             "rb"))
     for deg, val1 in accs.items():
         means = []
@@ -301,9 +301,9 @@ def plot_libsvm_accs():
             stdevs_m.append(mean - st)
 
         plotlibsvm(np.array(c_vals), np.array(means), np.array(stdevs_p),
-                   np.array(stdevs_m))
+                   np.array(stdevs_m), deg)
 
-def plotlibsvm(c_vals, means, stdevs_p, stdevs_m):
+def plotlibsvm(c_vals, means, stdevs_p, stdevs_m, deg):
     plt.scatter(c_vals, means, edgecolors='k', cmap=plt.cm.Paired)
     plt.scatter(c_vals, stdevs_p, edgecolors='k', cmap=plt.cm.Paired)
     plt.scatter(c_vals, stdevs_m, edgecolors='k', cmap=plt.cm.Paired)
@@ -312,7 +312,7 @@ def plotlibsvm(c_vals, means, stdevs_p, stdevs_m):
     plt.ylabel('Error +/- Std')
 
     if input('save pdf (y/n)?') == 'y':
-        with PdfPages('yeast_plot.pdf') as pdf:
+        with PdfPages('libsvmplot{0}.pdf'.format(deg)) as pdf:
             fig = plt.figure(1, figsize=(18.5, 10.5))
             pdf.savefig(fig)
 
