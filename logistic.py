@@ -272,20 +272,63 @@ def findmean(data):
     # and calculate mean
     sum = 0
     for d in data:
-        sum += d
+        sum += d[0]
+
+    return sum / len(data)
+
+def find_train_mean(data):
+    # Loop over error values for C
+    # and calculate mean
+    sum = 0
+    for d in data:
+        sum += d[1]
 
     return sum / len(data)
 
 def stdev(data, mean):
     sum = 0
     for d in data:
-        sum += m.pow(d - mean, 2)
+        sum += m.pow(d[0] - mean, 2)
 
     return m.sqrt(sum / len(data))
 
-def plot_libsvm_accs():
-    accs = pickle.load(open("/home/justin/Documents/libsvm-3.22/python/tot_accs2.p",
+def plot_libsvm_train_vs_test():
+    accs = pickle.load(open("/home/justin/Documents/libsvm-3.22/python/tot_accs_c76.p",
                             "rb"))
+    testmeans = []
+    trainmeans = []
+    for deg, val1 in accs.items():
+        c_vals = list(val1.keys())
+
+        # Loop over all error values for a values of C
+        for data in val1.values():
+            mean = findmean(data)
+            testmeans.append(mean)
+            trainmean = find_train_mean(data)
+            trainmeans.append(trainmean)
+
+    degs = list(accs.keys())
+    plot_libsvm_train_vs_test_graph(np.array(degs), np.array(testmeans),
+                              np.array(trainmeans))
+
+def plot_libsvm_train_vs_test_graph(degs, testmeans, trainmeans):
+    plt.scatter(degs, testmeans, edgecolors='k', cmap=plt.cm.Paired)
+    plt.scatter(degs, trainmeans, edgecolors='k', cmap=plt.cm.Paired)
+
+    plt.xlabel('Degree')
+    plt.ylabel('Train/Test Error')
+    plt.title("Degree vs Train/Test Error for C = 76")
+
+    if input('save pdf (y/n)?') == 'y':
+        with PdfPages('libsvmplot-train_vs_test.pdf') as pdf:
+            fig = plt.figure(1, figsize=(18.5, 10.5))
+            pdf.savefig(fig)
+
+    plt.show()
+
+def plot_libsvm_accs(fn):
+    accs = pickle.load(open(fn, "rb"))
+    title = fn.split("/")[-1].split(".")[0]
     for deg, val1 in accs.items():
         means = []
         stdevs_p = []
@@ -297,22 +340,25 @@ def plot_libsvm_accs():
             mean = findmean(data)
             means.append(mean)
             st = stdev(data, mean)
-            stdevs_p.append(mean + st)
-            stdevs_m.append(mean - st)
+            plus = mean + st
+            stdevs_p.append(plus)
+            minus = mean - st
+            stdevs_m.append(minus)
 
         plotlibsvm(np.array(c_vals), np.array(means), np.array(stdevs_p),
-                   np.array(stdevs_m), deg)
+                   np.array(stdevs_m), deg, title)
 
-def plotlibsvm(c_vals, means, stdevs_p, stdevs_m, deg):
+def plotlibsvm(c_vals, means, stdevs_p, stdevs_m, deg, title):
     plt.scatter(c_vals, means, edgecolors='k', cmap=plt.cm.Paired)
     plt.scatter(c_vals, stdevs_p, edgecolors='k', cmap=plt.cm.Paired)
     plt.scatter(c_vals, stdevs_m, edgecolors='k', cmap=plt.cm.Paired)
 
     plt.xlabel('C')
     plt.ylabel('Error +/- Std')
+    plt.title("Degree {0}".format(deg))
 
     if input('save pdf (y/n)?') == 'y':
-        with PdfPages('libsvmplot{0}.pdf'.format(deg)) as pdf:
+        with PdfPages('{0}_plot_deg_{1}.pdf'.format(title, deg)) as pdf:
             fig = plt.figure(1, figsize=(18.5, 10.5))
             pdf.savefig(fig)
 
@@ -342,4 +388,5 @@ if __name__ == '__main__':
 
     # plot_yeast_data(np.array(X), np.array(y))
     # ran_forest_yeast_data(np.array(X), np.array(y))
-    plot_libsvm_accs()
+    # plot_libsvm_accs("/home/justin/Documents/libsvm-3.22/python/tot_accs_c1-10K.p")
+    # plot_libsvm_train_vs_test()
