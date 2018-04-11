@@ -250,11 +250,11 @@ def svm_optimal_cv(X, y):
         f.write("\n")
 
 def svm(X, y):
-    with open("sklearn_svc_results_k5_nosplit_acc2.txt", "w") as f:
+    with open("sklearn_svc_results_k5_nosplit_acc_c76.txt", "w") as f:
         allerrors = {}
-        for d in range(1, 5):
+        for d in range(1, 10):
             errors = {}
-            for c in range(1, 100, 10):
+            for c in range(76, 77):
                 clf = SVC(C=c, gamma=1, kernel='poly', degree=d)
                 S = cross_val_score(clf, np.array(X), np.array(y), cv=4)
                 acc = S.mean()
@@ -265,7 +265,7 @@ def svm(X, y):
             allerrors[d] = errors
             print()
 
-    pickle.dump(allerrors, open("allerrors1.p", "wb"))
+    pickle.dump(allerrors, open("allerrorsc76.p", "wb"))
 
 def findmean(data):
     # Loop over error values for C
@@ -364,6 +364,82 @@ def plotlibsvm(c_vals, means, stdevs_p, stdevs_m, deg, title):
 
     plt.show()
 
+def plot_nSV(fn):
+    accs = pickle.load(open(fn, "rb"))
+    title = fn.split("/")[-1].split(".")[0]
+    degs = accs.keys()
+    nSVs = []
+    for deg, val1 in accs.items():
+        for data in val1.values():
+            sum = 0
+            for d in data:
+                sum += d[0]
+            avg_sv = sum / len(data)
+            nSVs.append(avg_sv)
+
+    plt.scatter(np.array(list(degs)), np.array(nSVs), edgecolors='k', cmap=plt.cm.Paired)
+
+    plt.xlabel('Degree')
+    plt.ylabel('Num SVs')
+    plt.title("Degree vs Number of SVs C = 76")
+
+    if input('save pdf (y/n)?') == 'y':
+        with PdfPages('{0}_plot.pdf'.format(title)) as pdf:
+            fig = plt.figure(1, figsize=(18.5, 10.5))
+            pdf.savefig(fig)
+
+    plt.show()
+
+def output_nBSV(fn):
+    accs = pickle.load(open(fn, "rb"))
+    title = fn.split("/")[-1].split(".")[0]
+    degs = accs.keys()
+    nBSVs = []
+    for deg, val1 in accs.items():
+        for data in val1.values():
+            sum = 0
+            for d in data:
+                sum += d[0]
+            avg_sv = sum / len(data)
+            nBSVs.append(avg_sv)
+
+    degs = np.array(list(degs))
+    nBSVs = np.array(nBSVs)
+
+    with open(title + ".txt", "w") as f:
+        f.write("degrees SV-in-HP\n")
+        print("degrees    SV-in-HP")
+        for el in zip(degs, nBSVs):
+            f.write("{0:>7}    {1}\n".format(el[0], el[1]))
+            print("{0:>7}    {1}\n".format(el[0], el[1]))
+
+def plot_nBSV(fn):
+    accs = pickle.load(open(fn, "rb"))
+    title = fn.split("/")[-1].split(".")[0]
+    degs = accs.keys()
+    nBSVs = []
+    for deg, val1 in accs.items():
+        for data in val1.values():
+            sum = 0
+            for d in data:
+                sum += d[0]
+            avg_sv = sum / len(data)
+            nBSVs.append(avg_sv)
+
+    plt.scatter(np.array(list(degs)), np.array(nBSVs), edgecolors='k', cmap=plt.cm.Paired)
+
+    plt.xlabel('Degree')
+    plt.ylabel('Num SVs in margin hyper planes')
+    plt.title("Degree vs Number of SVS in HP, C = 76")
+
+    if input('save pdf (y/n)?') == 'y':
+        with PdfPages('{0}_plot.pdf'.format(title)) as pdf:
+            fig = plt.figure(1, figsize=(18.5, 10.5))
+            pdf.savefig(fig)
+
+    plt.show()
+
+
 if __name__ == '__main__':
     # X1 = process_log_reg_x_data()
     # y1 = process_log_reg_y_data()
@@ -374,15 +450,15 @@ if __name__ == '__main__':
     # problem1b(X2, y2)
     # estimate_poly_fit(X2, y2)
 
-    # (x1, X), y = get_yeast_data()
-    # mins, maxs = find_min_max(X)
-    # X = normalize(X, mins, maxs)
+    (x1, X), y = get_yeast_data()
+    mins, maxs = find_min_max(X)
+    X = normalize(X, mins, maxs)
 
     # D = set_to_dict(set(y))
     # y = list(map(lambda val: D[val], y))
 
     # print("svm")
-    # svm(np.array(X), np.array(y))
+    svm(np.array(X), np.array(y))
 
     # plot_svm_error()
 
@@ -390,3 +466,6 @@ if __name__ == '__main__':
     # ran_forest_yeast_data(np.array(X), np.array(y))
     # plot_libsvm_accs("/home/justin/Documents/libsvm-3.22/python/tot_accs_c1-10K.p")
     # plot_libsvm_train_vs_test()
+
+    # plot_nBSV("/home/justin/Documents/libsvm-3.22/python/d_vs_nBSV.p")
+    # output_nBSV("/home/justin/Documents/libsvm-3.22/python/d_vs_nBSV.p")
